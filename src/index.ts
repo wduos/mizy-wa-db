@@ -12,7 +12,14 @@
  */
 
 export default {
-	async fetch(request, env, ctx): Promise<Response> {
-		return new Response("Hello World!");
+	async fetch(request: Request, env: Env): Promise<Response> {
+		const url = new URL(request.url);
+
+		if (url.pathname === '/stores') {
+			const { results } = await env.DB.prepare('SELECT * FROM stores').all();
+			return Response.json(results);
+		}
+
+		return new Response('D1 Local Worker is running. Visit /stores to query the DB.');
 	},
 } satisfies ExportedHandler<Env>;

@@ -1,0 +1,18 @@
+CREATE TABLE IF NOT EXISTS stores (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  name TEXT NOT NULL,
+  jid TEXT UNIQUE NOT NULL,
+  region TEXT NOT NULL,
+  dbID INTEGER,
+  createdAt DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  modifiedAt DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TRIGGER IF NOT EXISTS update_stores_modtime
+AFTER UPDATE ON stores
+FOR EACH ROW
+BEGIN
+  UPDATE stores SET modifiedAt = CURRENT_TIMESTAMP WHERE id = NEW.id;
+END;
+
+INSERT INTO stores (name, jid, region) VALUES ('Hipermais Araquari', '120363427009660756@g.us', 'Araquari'), ('KOMPRAO LJ50 - Araquari (Volta Redonda)', '120363426165573570@g.us', 'Araquari'), ('Brasil Atacadista Araquari', '120363409829361156@g.us', 'Araquari');
