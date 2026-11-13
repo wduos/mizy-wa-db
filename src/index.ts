@@ -20,6 +20,33 @@ export default {
 			return Response.json(results);
 		}
 
-		return new Response('D1 Local Worker is running. Visit /stores to query the DB.');
+		if (url.pathname === '/flyers') {
+			if (request.method === 'GET') {
+				const { results } = await env.DB.prepare('SELECT * FROM flyers').all();
+				return Response.json(results);
+			}
+
+			if (request.method === 'POST') {
+				try {
+					const body = (await request.json()) as { store_id: number; base64: string; text: string };
+
+					if (!body.store_id || !body.base64 || !body.text) {
+						return Response.json({ error: 'Missing required fields: store_id, title, price' }, { status: 400 });
+					}
+
+					const info = await env.DB.prepare('INSERT INTO products (store_id, title, price) VALUES (?, ?, ?)')
+						.bind(body.store_id, body.base64, body.text)
+						.run();
+
+					return Response.json({ success: true, info }, { status: 201 });
+				} catch (err) {
+					return Response.json({ success: false, error: 'Invalid JSON body or database error' }, { status: 400 });
+				}
+			}
+
+			return new Response('Method not allowed', { status: 405 });
+		}
+
+		return new Response('API is running.', { status: 200 });
 	},
 } satisfies ExportedHandler<Env>;
