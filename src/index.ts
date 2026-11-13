@@ -31,10 +31,10 @@ export default {
 					const body = (await request.json()) as { store_id: number; base64: string; text: string };
 
 					if (!body.store_id || !body.base64 || !body.text) {
-						return Response.json({ error: 'Missing required fields: store_id, title, price' }, { status: 400 });
+						return Response.json({ error: 'Missing required fields: store_id, base64, text' }, { status: 400 });
 					}
 
-					const info = await env.DB.prepare('INSERT INTO products (store_id, title, price) VALUES (?, ?, ?)')
+					const info = await env.DB.prepare('INSERT INTO flyers (store_id, base64, text) VALUES (?, ?, ?)')
 						.bind(body.store_id, body.base64, body.text)
 						.run();
 
