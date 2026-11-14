@@ -105,8 +105,19 @@ export default {
 						values.push(body.mime_type);
 					}
 					if (body.status !== undefined) {
+						const allowedStatuses = ['RECEIVED', 'PROCESSED', 'DELETED'];
+						const status = body.status || 'RECEIVED';
+
+						if (!allowedStatuses.includes(status)) {
+							return Response.json(
+								{
+									error: `Invalid status value. Must be one of: ${allowedStatuses.join(', ')}`,
+								},
+								{ status: 400 },
+							);
+						}
 						fields.push('status = ?');
-						values.push(body.status);
+						values.push(status);
 					}
 
 					if (fields.length === 0) {
