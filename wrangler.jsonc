@@ -18,7 +18,6 @@
 			"binding": "DB",
 			"database_name": "mizy-wa-db",
 			"database_id": "049c9695-219c-4777-a140-3ec3b8d33e2b",
-			"remote": true,
 		},
 	],
 	"observability": {
