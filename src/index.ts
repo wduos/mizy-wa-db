@@ -1,16 +1,3 @@
-/**
- * Welcome to Cloudflare Workers! This is your first worker.
- *
- * - Run `npm run dev` in your terminal to start a development server
- * - Open a browser tab at http://localhost:8787/ to see your worker in action
- * - Run `npm run deploy` to publish your worker
- *
- * Bind resources to your worker in `wrangler.jsonc`. After adding bindings, a type definition for the
- * `Env` object can be regenerated with `npm run cf-typegen`.
- *
- * Learn more at https://developers.cloudflare.com/workers/
- */
-
 export default {
 	async fetch(request: Request, env: Env): Promise<Response> {
 		const url = new URL(request.url);
@@ -53,6 +40,57 @@ export default {
 
 				try {
 					const info = await env.DB.prepare('DELETE FROM flyers WHERE id = ?').bind(id).run();
+
+					if (info.meta && info.meta.changes === 0) {
+						return Response.json({ success: false, error: 'Flyer not found' }, { status: 500 });
+					}
+
+					return Response.json({ success: true, info }, { status: 200 });
+				} catch (err) {
+					return Response.json({ success: false, error: 'Database error:' + err }, { status: 500 });
+				}
+			}
+
+			if (request.method === 'PATCH') {
+				const id = url.searchParams.get('id');
+
+				if (!id) {
+					return Response.json({ error: 'Missing required query parameter: id' }, { status: 400 });
+				}
+
+				try {
+					const body = (await request.json()) as { store_id?: number; base_64?: string; caption?: string; mime_type?: string };
+
+					const fields: string[] = [];
+					const values: any[] = [];
+
+					if (body.store_id !== undefined) {
+						fields.push('store_id = ?');
+						values.push(body.store_id);
+					}
+					if (body.base_64 !== undefined) {
+						fields.push('base_64 = ?');
+						values.push(body.base_64);
+					}
+					if (body.caption !== undefined) {
+						fields.push('caption = ?');
+						values.push(body.caption);
+					}
+					if (body.mime_type !== undefined) {
+						fields.push('mime_type = ?');
+						values.push(body.mime_type);
+					}
+
+					if (fields.length === 0) {
+						return Response.json({ error: 'No fields provided to update' }, { status: 400 });
+					}
+
+					values.push(id);
+
+					const query = `UPDATE flyers SET ${fields.join(', ')} WHERE id = ?`;
+					const info = await env.DB.prepare(query)
+						.bind(...values)
+						.run();
 
 					if (info.meta && info.meta.changes === 0) {
 						return Response.json({ success: false, error: 'Flyer not found' }, { status: 500 });
