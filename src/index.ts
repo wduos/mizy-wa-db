@@ -14,7 +14,6 @@ export default {
 				let query = 'SELECT * FROM flyers';
 				const bindings: string[] = [];
 
-				// If a status query parameter is provided, validate and filter
 				if (statusParam) {
 					const allowedStatuses = ['RECEIVED', 'PROCESSED', 'DELETED'];
 
@@ -31,7 +30,6 @@ export default {
 					bindings.push(statusParam);
 				}
 
-				// Execute query with optional bindings
 				const { results } = await env.DB.prepare(query)
 					.bind(...bindings)
 					.all();
