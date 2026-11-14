@@ -15,14 +15,32 @@ export default {
 
 			if (request.method === 'POST') {
 				try {
-					const body = (await request.json()) as { store_id: number; base_64: string; caption: string; mime_type: string };
+					const body = (await request.json()) as {
+						store_id: number;
+						base_64: string;
+						caption: string;
+						mime_type: string;
+						status?: 'RECEIVED' | 'PROCESSED' | 'DELETED';
+					};
 
 					if (!body.store_id || !body.base_64 || !body.caption || !body.mime_type) {
 						return Response.json({ error: 'Missing required fields: store_id, base_64, caption, mime_type' }, { status: 400 });
 					}
 
-					const info = await env.DB.prepare('INSERT INTO flyers (store_id, base_64, caption, mime_type) VALUES (?, ?, ?, ?)')
-						.bind(body.store_id, body.base_64, body.caption, body.mime_type)
+					const allowedStatuses = ['RECEIVED', 'PROCESSED', 'DELETED'];
+					const status = body.status || 'RECEIVED';
+
+					if (!allowedStatuses.includes(status)) {
+						return Response.json(
+							{
+								error: `Invalid status value. Must be one of: ${allowedStatuses.join(', ')}`,
+							},
+							{ status: 400 },
+						);
+					}
+
+					const info = await env.DB.prepare('INSERT INTO flyers (store_id, base_64, caption, mime_type, status) VALUES (?, ?, ?, ?, ?)')
+						.bind(body.store_id, body.base_64, body.caption, body.mime_type, status)
 						.run();
 
 					return Response.json({ success: true, info }, { status: 201 });
@@ -42,7 +60,7 @@ export default {
 					const info = await env.DB.prepare('DELETE FROM flyers WHERE id = ?').bind(id).run();
 
 					if (info.meta && info.meta.changes === 0) {
-						return Response.json({ success: false, error: 'Flyer not found' }, { status: 500 });
+						return Response.json({ success: false, error: 'Flyer not found' }, { status: 404 });
 					}
 
 					return Response.json({ success: true, info }, { status: 200 });
@@ -59,7 +77,13 @@ export default {
 				}
 
 				try {
-					const body = (await request.json()) as { store_id?: number; base_64?: string; caption?: string; mime_type?: string };
+					const body = (await request.json()) as {
+						store_id?: number;
+						base_64?: string;
+						caption?: string;
+						mime_type?: string;
+						status?: 'RECEIVED' | 'PROCESSED' | 'DELETED';
+					};
 
 					const fields: string[] = [];
 					const values: any[] = [];
@@ -79,6 +103,10 @@ export default {
 					if (body.mime_type !== undefined) {
 						fields.push('mime_type = ?');
 						values.push(body.mime_type);
+					}
+					if (body.status !== undefined) {
+						fields.push('status = ?');
+						values.push(body.status);
 					}
 
 					if (fields.length === 0) {
