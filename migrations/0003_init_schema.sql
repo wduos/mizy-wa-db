@@ -1,0 +1,36 @@
+-- Migration number: 0003 	 2026-11-14T00:31:58.569Z
+CREATE TABLE IF NOT EXISTS stores (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  name TEXT NOT NULL,
+  whatsapp_jid TEXT UNIQUE NOT NULL,
+  external_db_id INTEGER,
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  modified_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TRIGGER IF NOT EXISTS update_stores_modtime
+AFTER UPDATE ON stores
+FOR EACH ROW
+BEGIN
+  UPDATE stores SET modified_at = CURRENT_TIMESTAMP WHERE id = NEW.id;
+END;
+
+INSERT INTO stores (name, whatsapp_jid) VALUES ('Hipermais Araquari', '120363427009660756@g.us'), ('KOMPRAO LJ50 - Araquari (Volta Redonda)', '120363426165573570@g.us'), ('Brasil Atacadista Araquari', '120363409829361156@g.us');
+
+CREATE TABLE IF NOT EXISTS flyers (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  store_id INTEGER NOT NULL,
+  base_64 TEXT NOT NULL,
+  caption TEXT,
+  mime_type TEXT NOT NULL,
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  modified_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (store_id) REFERENCES stores(id)
+);
+
+CREATE TRIGGER IF NOT EXISTS update_flyers_modtime
+AFTER UPDATE ON flyers
+FOR EACH ROW
+BEGIN
+  UPDATE flyers SET modified_at = CURRENT_TIMESTAMP WHERE id = NEW.id;
+END;
