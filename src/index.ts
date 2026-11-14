@@ -9,7 +9,32 @@ export default {
 
 		if (url.pathname === '/flyers') {
 			if (request.method === 'GET') {
-				const { results } = await env.DB.prepare('SELECT * FROM flyers').all();
+				const statusParam = url.searchParams.get('status');
+
+				let query = 'SELECT * FROM flyers';
+				const bindings: string[] = [];
+
+				// If a status query parameter is provided, validate and filter
+				if (statusParam) {
+					const allowedStatuses = ['RECEIVED', 'PROCESSED', 'DELETED'];
+
+					if (!allowedStatuses.includes(statusParam)) {
+						return Response.json(
+							{
+								error: `Invalid status filter. Must be one of: ${allowedStatuses.join(', ')}`,
+							},
+							{ status: 400 },
+						);
+					}
+
+					query += ' WHERE status = ?';
+					bindings.push(statusParam);
+				}
+
+				// Execute query with optional bindings
+				const { results } = await env.DB.prepare(query)
+					.bind(...bindings)
+					.all();
 				return Response.json(results);
 			}
 
